@@ -4,3 +4,5 @@ scikit-learn
 joblib
 pandas
 numpy
+lightgbm
+lightgbm==4.3.0
