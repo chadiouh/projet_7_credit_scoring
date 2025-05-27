@@ -6,8 +6,7 @@ import joblib
 import os
 
 # Chargement des top features
-root_path = r"C:\Users\chouh\Projet7"
-features_path = os.path.join(root_path, "artifacts", "top_10_features.pkl")
+features_path = os.path.join("artifacts", "top_10_features.pkl")
 top_features = joblib.load(features_path)
 
 st.set_page_config(page_title="Scoring Credit", layout="centered")
