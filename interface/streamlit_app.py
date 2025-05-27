@@ -6,7 +6,7 @@ import os
 
 # === Chargement des artefacts ===
 model_path = os.path.join("artifacts", "best_model_lgbm_optimized.pkl")
-preprocessor_path = os.path.join("artifacts", "preprocessor_custom.pkl")
+preprocessor_path = os.path.join("artifacts", "custom_preprocessing.pkl")
 features_path = os.path.join("artifacts", "top_10_features.pkl")
 
 try:
