@@ -6,3 +6,4 @@ pandas
 numpy
 lightgbm
 lightgbm==4.3.0
+custom_preprocessing
