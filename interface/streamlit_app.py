@@ -4,16 +4,20 @@ import pandas as pd
 import joblib
 import os
 
-
 # === Chargement des artefacts ===
 model_path = os.path.join("artifacts", "best_model_lgbm_optimized.pkl")
 preprocessor_path = os.path.join("artifacts", "preprocessor_custom.pkl")
 features_path = os.path.join("artifacts", "top_10_features.pkl")
 
-model = joblib.load(model_path)
-preprocessor = joblib.load(preprocessor_path)
-top_features = joblib.load(features_path)
+try:
+    model = joblib.load(model_path)
+    preprocessor = joblib.load(preprocessor_path)
+    top_features = joblib.load(features_path)
+except Exception as e:
+    st.error(f"Erreur de chargement des fichiers : {e}")
+    st.stop()
 
+# === Configuration de l'interface ===
 st.set_page_config(page_title="Scoring Credit", layout="centered")
 st.title("Scoring de crédit client")
 st.markdown("Remplissez les champs ci-dessous pour obtenir une prédiction de défaut.")
@@ -41,8 +45,9 @@ if submit:
         for key in input_data:
             try:
                 input_data[key] = float(input_data[key])
-            except:
-                pass
+            except ValueError:
+                st.error(f"Entrée invalide pour {key}. Veuillez entrer un nombre.")
+                st.stop()
 
         proba = predict_credit_risk(input_data)
         prediction = int(proba >= 0.5)
@@ -53,7 +58,8 @@ if submit:
                   "Client à risque ❌" if prediction == 1 else "Client acceptable ✅")
 
     except Exception as e:
-        st.error(f"Erreur technique : {e}")
+        st.error(f"Erreur lors de la prédiction : {e}")
+
 
 
 
