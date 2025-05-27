@@ -3,6 +3,8 @@ import streamlit as st
 import pandas as pd
 import joblib
 import os
+import interface.custom_preprocessing
+
 
 # === Chargement des artefacts ===
 model_path = os.path.join("artifacts", "best_model_lgbm_optimized.pkl")
