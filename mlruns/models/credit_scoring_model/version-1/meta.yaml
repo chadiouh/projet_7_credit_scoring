@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1748187757810
+current_stage: Staging
+description: null
+last_updated_timestamp: 1748187761660
+name: credit_scoring_model
+run_id: 56b2a534aa2b4a31bec976defbb6b776
+run_link: null
+source: file:C:/Users/chouh/Projet7/mlruns/840992226482212702/56b2a534aa2b4a31bec976defbb6b776/artifacts/model
+status: READY
+status_message: null
+storage_location: file:C:/Users/chouh/Projet7/mlruns/840992226482212702/56b2a534aa2b4a31bec976defbb6b776/artifacts/model
+user_id: null
+version: 1

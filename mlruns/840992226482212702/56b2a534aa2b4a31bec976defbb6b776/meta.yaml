@@ -1,0 +1,15 @@
+artifact_uri: file:C:/Users/chouh/Projet7/mlruns/840992226482212702/56b2a534aa2b4a31bec976defbb6b776/artifacts
+end_time: 1748187757874
+entry_point_name: ''
+experiment_id: '840992226482212702'
+lifecycle_stage: active
+run_id: 56b2a534aa2b4a31bec976defbb6b776
+run_name: LightGBM_Optimized
+run_uuid: 56b2a534aa2b4a31bec976defbb6b776
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1748187738382
+status: 3
+tags: []
+user_id: chouh
