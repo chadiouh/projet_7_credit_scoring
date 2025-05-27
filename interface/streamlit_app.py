@@ -3,7 +3,6 @@ import streamlit as st
 import pandas as pd
 import joblib
 import os
-import interface.custom_preprocessing
 
 
 # === Chargement des artefacts ===
