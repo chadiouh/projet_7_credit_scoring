@@ -23,7 +23,7 @@ if st.button("Prédire"):
         response = requests.post(
             API_URL,
             headers={"Content-Type": "application/json"},
-            json={"data": [user_input]},
+            json=user_input,
             timeout=10
         )
         
