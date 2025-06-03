@@ -24,7 +24,7 @@ def safe_load(path, mode="pkl"):
         raise RuntimeError(f"Erreur lors du chargement de {os.path.basename(path)} : {e}")
 
 try:
-    model = safe_load(os.path.join(BASE_DIR, "model_final.pkl"))
+    model = safe_load(os.path.join(BASE_DIR, "model.pkl"))
     imputer = safe_load(os.path.join(BASE_DIR, "preprocessor.pkl"))
     baseline_row = safe_load(os.path.join(BASE_DIR, "baseline_row.json"), mode="json")
     top_features = safe_load(os.path.join(BASE_DIR, "top_features.json"), mode="json")
