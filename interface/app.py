@@ -17,21 +17,29 @@ for feature in top_features:
 
 # === Bouton de prédiction ===
 if st.button("Prédire"):
-    # Nettoyage et conversion
     try:
+        # Nettoyage et conversion
         input_data = {k: float(v) for k, v in user_input.items() if v.strip() != ""}
     except ValueError:
         st.error("Toutes les entrées doivent être numériques.")
     else:
         payload = {"data": input_data}
+
         try:
-            response = requests.post("https://projet-7-credit-scoring-api.onrender.com", json=payload)
-            if response.status_code == 200:
-                result = response.json()
-                st.success(f"✅ Probabilité d'insolvabilité : {result['proba']}")
-                st.info(f"Prédiction finale : {'Non solvable' if result['prediction'] == 1 else 'Solvable'}")
-                st.caption(f"Seuil utilisé : {result['threshold']}")
-            else:
-                st.error("Erreur dans l’API : " + response.text)
-        except requests.exceptions.ConnectionError:
-            st.error("⚠️ L'API n'est pas accessible. Veuillez lancer `main.py` via uvicorn.")
+            # ✅ Appel vers le bon endpoint
+            response = requests.post(
+                "https://projet-7-credit-scoring-api.onrender.com/predict",
+                json=payload
+            )
+            response.raise_for_status()  # Gestion erreurs HTTP
+
+            result = response.json()
+            st.success(f"✅ Probabilité d'insolvabilité : {result['proba']}")
+            st.info(f"Prédiction finale : {'Non solvable' if result['prediction'] == 1 else 'Solvable'}")
+            st.caption(f"Seuil utilisé : {result['threshold']}")
+
+        except requests.exceptions.RequestException as e:
+            st.error(f"Erreur réseau : {e}")
+        except ValueError:
+            st.error("Erreur : réponse inattendue de l’API (non JSON).")
+
