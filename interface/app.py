@@ -1,45 +1,45 @@
 ﻿import streamlit as st
+import pandas as pd
 import requests
 import json
 
-# === Titre et description ===
-st.title("🧠 Interface Credit Scoring")
-st.write("Remplissez les variables principales pour prédire si un client est solvable.")
-
-# === Chargement des top features ===
+# === Chargement des features ===
 with open("top_features.json", "r") as f:
     top_features = json.load(f)
 
-# === Création dynamique du formulaire ===
+API_URL = "https://projet-7-credit-scoring-api.onrender.com/predict"
+
+st.title("🧠 Interface Credit Scoring")
+st.write("Remplissez les variables principales pour prédire si un client est solvable.")
+
+# === Interface utilisateur dynamique
 user_input = {}
 for feature in top_features:
-    user_input[feature] = st.text_input(f"{feature} :")
+    user_input[feature] = st.number_input(feature, step=1.0)
 
-# === Bouton de prédiction ===
 if st.button("Prédire"):
     try:
-        # Nettoyage et conversion
-        input_data = {k: float(v) for k, v in user_input.items() if v.strip() != ""}
-    except ValueError:
-        st.error("Toutes les entrées doivent être numériques.")
-    else:
-        payload = {"data": input_data}
+        # Envoi de la requête
+        response = requests.post(
+            API_URL,
+            headers={"Content-Type": "application/json"},
+            json={"data": [user_input]},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            prediction = response.json().get("prediction")
+            if prediction is not None:
+                if prediction == 1:
+                    st.success("✅ Ce client est solvable.")
+                else:
+                    st.error("❌ Ce client n'est pas solvable.")
+            else:
+                st.warning("Réponse inattendue de l'API.")
+        else:
+            st.error(f"Erreur API ({response.status_code}) : {response.text}")
 
-        try:
-            # ✅ Appel vers le bon endpoint
-            response = requests.post(
-                "https://projet-7-credit-scoring-api.onrender.com/predict",
-                json=payload
-            )
-            response.raise_for_status()  # Gestion erreurs HTTP
+    except requests.exceptions.RequestException as e:
+        st.error(f"Erreur réseau : {e}")
 
-            result = response.json()
-            st.success(f"✅ Probabilité d'insolvabilité : {result['proba']}")
-            st.info(f"Prédiction finale : {'Non solvable' if result['prediction'] == 1 else 'Solvable'}")
-            st.caption(f"Seuil utilisé : {result['threshold']}")
-
-        except requests.exceptions.RequestException as e:
-            st.error(f"Erreur réseau : {e}")
-        except ValueError:
-            st.error("Erreur : réponse inattendue de l’API (non JSON).")
 
