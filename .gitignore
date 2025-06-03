@@ -1,0 +1,13 @@
+# Ignorer les fichiers lourds inutiles au dépôt
+data/
+models/
+mlruns/
+__pycache__/
+*.pkl
+*.joblib
+*.csv
+*.xlsx
+.DS_Store
+*.pdf
+*.png
+*.ipynb_checkpoints/
