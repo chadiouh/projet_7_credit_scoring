@@ -1,65 +1,59 @@
-﻿from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import joblib
-import pandas as pd
-import numpy as np
+﻿import pickle
 import json
-import os
+import numpy as np
+import pandas as pd
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List
 
-# === Initialisation FastAPI ===
-app = FastAPI(title="Credit Scoring API", description="API de prédiction LightGBM optimisé", version="1.0")
+# Chargement des fichiers
+with open("top_features.json", "r") as f:
+    top_features = json.load(f)
 
-# === Détection du chemin absolu du fichier ===
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+with open("baseline_row.json", "r") as f:
+    baseline_row = json.load(f)
 
-# === Chargement sécurisé des artefacts ===
-def safe_load(path, mode="pkl"):
-    try:
-        if mode == "pkl":
-            return joblib.load(path)
-        elif mode == "json":
-            with open(path, "r") as f:
-                return json.load(f)
-    except Exception as e:
-        raise RuntimeError(f"Erreur lors du chargement de {os.path.basename(path)} : {e}")
+with open("preprocessor.pkl", "rb") as f:
+    preprocessor = pickle.load(f)
 
-try:
-    model = safe_load(os.path.join(BASE_DIR, "model.pkl"))
-    imputer = safe_load(os.path.join(BASE_DIR, "preprocessor.pkl"))
-    baseline_row = safe_load(os.path.join(BASE_DIR, "baseline_row.json"), mode="json")
-    top_features = safe_load(os.path.join(BASE_DIR, "top_features.json"), mode="json")
-except RuntimeError as err:
-    raise HTTPException(status_code=500, detail=str(err))
+with open("model_final.pkl", "rb") as f:
+    model = pickle.load(f)
 
-BEST_THRESHOLD = 0.42  # ajustable
+# Initialisation de l'API
+app = FastAPI()
 
+# Modèle de données (uniquement les 15 variables)
 class InputData(BaseModel):
-    data: dict
+    values: List[float]
 
 @app.get("/")
 def read_root():
-    return {"message": "Bienvenue sur l'API Credit Scoring"}
+    return {"message": "API de scoring opérationnelle."}
 
 @app.post("/predict")
-def predict(input: InputData):
+def predict(input_data: InputData):
     try:
-        input_data = input.data
+        # Vérification de la taille d'entrée
+        if len(input_data.values) != len(top_features):
+            raise HTTPException(status_code=400, detail=f"Attendu {len(top_features)} valeurs, reçu {len(input_data.values)}")
 
-        # Remplissage avec valeurs par défaut
-        complete_row = baseline_row.copy()
-        complete_row.update(input_data)
+        # Construction d'une ligne complète avec toutes les features
+        full_input = baseline_row.copy()
+        for i, feature in enumerate(top_features):
+            full_input[feature] = input_data.values[i]
 
-        X = pd.DataFrame([complete_row])
-        X_imputed = imputer.transform(X)
+        # Transformation en DataFrame
+        X = pd.DataFrame([full_input])
 
-        y_proba = model.predict_proba(X_imputed)[:, 1][0]
-        y_pred = int(y_proba >= BEST_THRESHOLD)
+        # Préprocessing
+        X_processed = preprocessor.transform(X)
 
-        return {
-            "proba": round(y_proba, 4),
-            "prediction": y_pred,
-            "threshold": BEST_THRESHOLD
-        }
+        # Prédiction
+        prediction = model.predict_proba(X_processed)[0, 1]
+        return {"prediction": float(prediction)}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur pendant la prédiction : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
