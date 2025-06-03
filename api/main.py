@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI
+﻿from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import joblib
 import pandas as pd
@@ -9,52 +9,57 @@ import os
 # === Initialisation FastAPI ===
 app = FastAPI(title="Credit Scoring API", description="API de prédiction LightGBM optimisé", version="1.0")
 
-# === Détection du chemin absolu du fichier (fonctionne localement et sur Render) ===
+# === Détection du chemin absolu du fichier ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# === Chargement des artefacts (modèle, imputer, baseline, features importantes) ===
-model = joblib.load(os.path.join(BASE_DIR, "model.pkl"))
-imputer = joblib.load(os.path.join(BASE_DIR, "preprocessor.pkl"))
+# === Chargement sécurisé des artefacts ===
+def safe_load(path, mode="pkl"):
+    try:
+        if mode == "pkl":
+            return joblib.load(path)
+        elif mode == "json":
+            with open(path, "r") as f:
+                return json.load(f)
+    except Exception as e:
+        raise RuntimeError(f"Erreur lors du chargement de {os.path.basename(path)} : {e}")
 
-with open(os.path.join(BASE_DIR, "baseline_row.json"), "r") as f:
-    baseline_row = json.load(f)
+try:
+    model = safe_load(os.path.join(BASE_DIR, "model.pkl"))
+    imputer = safe_load(os.path.join(BASE_DIR, "preprocessor.pkl"))
+    baseline_row = safe_load(os.path.join(BASE_DIR, "baseline_row.json"), mode="json")
+    top_features = safe_load(os.path.join(BASE_DIR, "top_features.json"), mode="json")
+except RuntimeError as err:
+    raise HTTPException(status_code=500, detail=str(err))
 
-with open(os.path.join(BASE_DIR, "top_features.json"), "r") as f:
-    top_features = json.load(f)
+BEST_THRESHOLD = 0.42  # ajustable
 
-# === Définition du seuil optimal (ajusté selon la validation métier) ===
-BEST_THRESHOLD = 0.42  # à ajuster si besoin
-
-# === Classe d'entrée attendue par l'API ===
 class InputData(BaseModel):
     data: dict
 
-# === Route d’accueil ===
 @app.get("/")
 def read_root():
     return {"message": "Bienvenue sur l'API Credit Scoring"}
 
-# === Route de prédiction ===
 @app.post("/predict")
 def predict(input: InputData):
-    input_data = input.data
+    try:
+        input_data = input.data
 
-    # Complétion automatique avec la ligne baseline
-    complete_row = baseline_row.copy()
-    complete_row.update(input_data)
+        # Remplissage avec valeurs par défaut
+        complete_row = baseline_row.copy()
+        complete_row.update(input_data)
 
-    # Conversion en DataFrame
-    X = pd.DataFrame([complete_row])
+        X = pd.DataFrame([complete_row])
+        X_imputed = imputer.transform(X)
 
-    # Imputation
-    X_imputed = imputer.transform(X)
+        y_proba = model.predict_proba(X_imputed)[:, 1][0]
+        y_pred = int(y_proba >= BEST_THRESHOLD)
 
-    # Prédiction
-    y_proba = model.predict_proba(X_imputed)[:, 1][0]
-    y_pred = int(y_proba >= BEST_THRESHOLD)
+        return {
+            "proba": round(y_proba, 4),
+            "prediction": y_pred,
+            "threshold": BEST_THRESHOLD
+        }
 
-    return {
-        "proba": round(y_proba, 4),
-        "prediction": y_pred,
-        "threshold": BEST_THRESHOLD
-    }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur pendant la prédiction : {e}")
