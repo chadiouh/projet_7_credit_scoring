@@ -21,11 +21,11 @@ if st.button("Prédire"):
     try:
         # Envoi de la requête
         response = requests.post(
-            API_URL,
-            headers={"Content-Type": "application/json"},
-            json=user_input,
-            timeout=10
-        )
+    API_URL,
+    headers={"Content-Type": "application/json"},
+    json={"values": user_input},  # ✅ ajout du champ "values"
+    timeout=10
+)
         
         if response.status_code == 200:
             prediction = response.json().get("prediction")
